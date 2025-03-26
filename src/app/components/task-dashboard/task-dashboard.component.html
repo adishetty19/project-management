@@ -1,0 +1,104 @@
+<div class="task-dashboard">
+    <h2>Task Management</h2>
+    
+    <div class="notification-bar mb-3">
+        <h4>Notifications:</h4>
+        <ul>
+            <li *ngFor="let note of notifications$ | async">
+                {{ note.message }} – {{ note.timestamp | date:'shortTime' }}
+            </li>
+        </ul>
+        <button class="btn btn-sm btn-primary" (click)="sendTestNotification()">Send Test Notification</button>
+    </div>
+    
+    <div class="view-toggle mb-3">
+        <button class="btn btn-secondary me-2" (click)="switchView('list')">List View</button>
+        <button class="btn btn-secondary" (click)="switchView('kanban')">Kanban View</button>
+    </div>
+    
+    <div *ngIf="selectedView === 'list'">
+        <form [formGroup]="form" (ngSubmit)="addTask()">
+            <div class="form-group mb-2">
+                <label for="title">Task Title</label>
+                <input id="title" formControlName="title" class="form-control" placeholder="Enter task title">
+            </div>
+            <div *ngIf="currentUser?.role === 'Manager'">
+                <div class="form-group mb-2">
+                    <label for="description">Description</label>
+                    <textarea id="description" formControlName="description" class="form-control" placeholder="Enter task description"></textarea>
+                </div>
+                <div class="form-group mb-2">
+                    <label for="dueDate">Due Date</label>
+                    <input id="dueDate" formControlName="dueDate" type="date" class="form-control">
+                </div>
+                <div class="form-group mb-2">
+                    <label for="project">Project Name</label>
+                    <input id="project" formControlName="project" class="form-control" placeholder="Enter project name">
+                </div>
+                <div class="form-group mb-2">
+                    <label for="assignedTo">Assign Task To (Member Email)</label>
+                    <input id="assignedTo" formControlName="assignedTo" class="form-control" placeholder="Enter member email">
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Add Task</button>
+        </form>
+      
+        <div class="task-list mt-3">
+            <h3>Tasks List</h3>
+            <ul class="list-group">
+                <li *ngFor="let task of tasks" class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>{{ task.title }}</strong>
+                        <span [ngClass]="{ 'badge bg-warning': task.status === 'To-Do', 'badge bg-info': task.status === 'In Progress', 'badge bg-success': task.status === 'Done' }">
+                            {{ task.status }}
+                        </span>
+                        <div *ngIf="currentUser?.role === 'Manager'">
+                            <small>Description: {{ task.description }}</small><br>
+                            <small>Due Date: {{ task.dueDate | date }}</small><br>
+                            <small>Project: {{ task.project }}</small><br>
+                            <small>Assigned To: {{ task.assignedTo }}</small>
+                        </div>
+                        <div *ngIf="currentUser?.role === 'Member'">
+                            <small>Assigned To: {{ task.assignedTo }}</small>
+                        </div>
+                    </div>
+                    <div>
+                        <button class="btn btn-sm btn-secondary me-2" (click)="updateTaskStatus(task, 'In Progress')">In Progress</button>
+                        <button class="btn btn-sm btn-success me-2" (click)="updateTaskStatus(task, 'Done')">Done</button>
+                        <button *ngIf="currentUser?.role === 'Manager'" class="btn btn-sm btn-danger" (click)="deleteTask(task)">Delete</button>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+    
+    <div *ngIf="selectedView === 'kanban'" class="kanban-view">
+        <div class="row">
+            <div class="col-md-4">
+                <h3>To-Do</h3>
+                <div cdkDropList id="todoList" [cdkDropListData]="todoTasks" [cdkDropListConnectedTo]="['inprogressList', 'doneList']" (cdkDropListDropped)="onDrop($event, 'To-Do')" class="list-group task-container">
+                    <div *ngFor="let task of todoTasks" cdkDrag class="list-group-item">
+                        {{ task.title }}
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <h3>In Progress</h3>
+                <div cdkDropList  id="inprogressList" [cdkDropListData]="inProgressTasks" [cdkDropListConnectedTo]="['todoList', 'doneList']" (cdkDropListDropped)="onDrop($event, 'In Progress')" class="list-group task-container">
+                    <div *ngFor="let task of inProgressTasks" cdkDrag class="list-group-item">
+                        {{ task.title }}
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <h3>Done</h3>
+                <div cdkDropList id="doneList" [cdkDropListData]="doneTasks" [cdkDropListConnectedTo]="['todoList', 'inprogressList']" (cdkDropListDropped)="onDrop($event, 'Done')" class="list-group task-container">
+                    <div *ngFor="let task of doneTasks" cdkDrag class="list-group-item">
+                        {{ task.title }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+  
